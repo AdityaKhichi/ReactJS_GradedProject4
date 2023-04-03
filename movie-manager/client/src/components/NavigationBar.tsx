@@ -7,7 +7,7 @@ import MovieDetails from "./MovieDetails"
 function NavigationBar() {
   const [search, setSearch] = useState("")
 
-  const handleSearch = (e: any) => {
+  const handleSearch = (e: ChangeEvent<HTMLInputElement>) => {
     setSearch(e.target.value)
   }
 
