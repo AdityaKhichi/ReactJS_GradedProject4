@@ -4,48 +4,42 @@ import IMovieList from "../model/IMovieList"
 import { fetchMoviesList } from "../services/FetchData"
 import MovieCard from "./MovieCard"
 
-export default function Main({ searchValue }: { searchValue: string }) {
+type Props = {
+  searchValue: string
+}
+
+export default function Main({ searchValue }: Props) {
   const [moviesData, setMoviesData] = useState<IMovieList[]>([])
+  const [filteredMovies, setFilteredMovies] = useState<IMovieList[]>([])
   const location = useLocation()
 
-  let tabName: string | undefined = location.state?.tab
-  if (tabName == undefined) {
-    tabName = "movies-in-theaters"
-  }
-
-  /*useDebounce function is being used here to 
-    avoid unnecessary Api calls for each keystroke on searchbar */
-  const useDebounce = (value: string, delay: number): string => {
-    const [debounceText, SetDebounceText] = useState(value)
-
-    useEffect(() => {
-      const timeoutId = setTimeout(() => {
-        SetDebounceText(value)
-      }, delay)
-
-      return () => clearTimeout(timeoutId)
-    }, [value])
-
-    return debounceText
-  }
-  const debouncedText = useDebounce(searchValue, 300)
-
-  useEffect(() => {
-    fetchMovies()
-  }, [tabName, debouncedText])
+  let tabName: string | undefined = location.state?.tab || "movies-in-theaters"
 
   const fetchMovies = async () => {
     try {
-      const movies = await fetchMoviesList(tabName, debouncedText)
+      const movies = await fetchMoviesList(tabName)
       setMoviesData(movies)
     } catch (error: any) {
       console.error(error)
     }
   }
 
+  useEffect(() => {
+    fetchMovies()
+  }, [tabName])
+
+  useEffect(() => {
+    const filteredData = searchValue
+      ? moviesData.filter((movie) =>
+          movie.title.toLowerCase().includes(searchValue)
+        )
+      : moviesData
+    setFilteredMovies(filteredData)
+  }, [moviesData, searchValue])
+
   return (
     <>
-      {moviesData.map((movie) => {
+      {filteredMovies.map((movie) => {
         return (
           <MovieCard
             key={movie.id}
