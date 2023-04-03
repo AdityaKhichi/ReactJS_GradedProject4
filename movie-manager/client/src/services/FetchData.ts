@@ -3,15 +3,8 @@ import IMovieList from "../model/IMovieList"
 
 const HostApi: string = "http://localhost:4002"
 
-export const fetchMoviesList = async (
-  movieListType: string | undefined,
-  search: string
-) => {
-  if (search === undefined || search === "") {
-    const Api = `${HostApi}/${movieListType}`
-    return await axios.get(Api).then((res) => res.data)
-  }
-  const Api = `${HostApi}/${movieListType}?title_like=${search}`
+export const fetchMoviesList = async (movieListType: string | undefined) => {
+  const Api = `${HostApi}/${movieListType}`
   return await axios.get(Api).then((res) => res.data)
 }
 
