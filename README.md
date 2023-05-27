@@ -23,8 +23,6 @@ Movies on the Tip is an online movie manager whose responsibility is to take car
 6. You are required to submit the screen recording of the working project, the recorded video will also be a criterion to calculate the final marks. You can attach a drive link of the video along with the solution in a separate text file. Make the drive link public. 
 
 
-[![Build Status](https://travis-ci.org/joemccann/dillinger.svg?branch=master)](https://travis-ci.org/joemccann/dillinger)
-
 ## Installation
 Download in two different folders
 - client
