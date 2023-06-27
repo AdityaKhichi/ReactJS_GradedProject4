@@ -1,9 +1,17 @@
-export default interface IMovieList {
-  id: number;
+export interface TopLevel {
+  movies: Movies;
+}
+
+export interface Movies {
+  [key: string]: MoviesComingElement[];
+}
+
+export interface MoviesComingElement {
+  id: string;
   title: string;
-  year: number;
-  genres: [];
-  ratings: [];
+  year: string;
+  genres: string[];
+  ratings: number[];
   poster: string;
   contentRating: string;
   duration: string;
@@ -11,7 +19,7 @@ export default interface IMovieList {
   averageRating: number;
   originalTitle: string;
   storyline: string;
-  actors: [];
+  actors: string[];
   imdbRating: number;
   posterurl: string;
 }

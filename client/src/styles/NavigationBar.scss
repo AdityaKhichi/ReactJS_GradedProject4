@@ -1,0 +1,37 @@
+@import "~bootstrap/scss/bootstrap.scss";
+
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-left: 0;
+}
+.navbar-logo {
+  height: 69px;
+  margin-right: 10px;
+  cursor: pointer;
+}
+
+.navbar-nav {
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-end;
+  .nav-link {
+    font-size: 15px;
+    text-transform: uppercase;
+    padding: 0.7rem 1rem;
+    margin-inline: 2px;
+    border-bottom: 3px solid transparent;
+    transition: all 0.2s ease-in-out;
+
+    &:hover,
+    &:focus,
+    &.active {
+      border-bottom-color: white;
+    }
+  }
+}
+
+.form-control {
+  border-radius: 3px;
+}
