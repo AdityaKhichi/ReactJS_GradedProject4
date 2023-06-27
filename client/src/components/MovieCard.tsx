@@ -1,93 +1,146 @@
+import { Fragment, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
+import { RiStarSFill } from "react-icons/ri";
+import { FaHeart, FaRegHeart } from "react-icons/fa";
+import { Card } from "react-bootstrap";
 import { toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { ScrollPosition } from "react-lazy-load-image-component";
+import { AppDispatch } from "../store/store";
 import {
-  addMovieToFavourites,
-  removeMovieFromFavourites,
-  fetchFavouriteMovies,
-} from "../services/FetchData";
-import "../styles/MovieCard.css";
-import { ImHeart, ImCross } from "react-icons/im";
-import IMovieList from "../model/IMovieList";
+  addFavouriteMovie,
+  removeFavouriteMovie,
+  updateNavigation,
+  favouriteMoviesSelector,
+} from "../store/selectors";
+import {
+  deleteFavouriteMovie,
+  postFavouriteMovie,
+} from "../store/serviceSlice";
+import { MoviesComingElement } from "../model/IMovieList";
+import Lazy from "../utils/Lazy";
+import "../styles/MovieCard.scss";
 
-type MovieCardProps = {
-  movie: IMovieList;
-  tabName: string | undefined;
-  fetchMovies(): void;
-};
+interface MovieProps {
+  movie: MoviesComingElement;
+  scrollPosition: ScrollPosition;
+}
 
-const MovieCard = ({ movie, tabName, fetchMovies }: MovieCardProps) => {
+const MovieCard = ({ movie, scrollPosition }: MovieProps) => {
+  const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
 
-  const addToFav = async () => {
-    let favorites = await fetchFavouriteMovies();
-    let movieAlreadyexists = favorites.some(
-      (favoriteMovie: IMovieList) => favoriteMovie.title === movie.title
-    );
-    if (movieAlreadyexists) {
-      toast.error(`Error! ${movie.title} is already added to favourites!`, {
-        position: toast.POSITION.TOP_RIGHT,
-        autoClose: 3000,
+  const noPosterImage = require("../assets/no-poster.png");
+  const [posterError, setPosterError] = useState(false);
+
+  const { activeTab } = useSelector(updateNavigation);
+  const favouriteMovies = useSelector(favouriteMoviesSelector);
+  const movieAlreadyFav = favouriteMovies.some(
+    (fav) => fav.title === movie.title
+  );
+
+  const addToFav = async (
+    e: React.MouseEvent<HTMLButtonElement, MouseEvent>
+  ) => {
+    e.stopPropagation();
+    if (movieAlreadyFav) {
+      toast.warn(`Error! '${movie.title}' is already added to favourites`, {
+        position: "top-right",
+        autoClose: 4000,
+        theme: "dark",
       });
       return;
     }
 
-    const response = await addMovieToFavourites(movie);
-    if (response === 201) {
-      toast.success(`${movie.title} added to favourites successfully!`, {
-        position: toast.POSITION.TOP_RIGHT,
-        autoClose: 3000,
+    const response = await dispatch(postFavouriteMovie(movie));
+    if (response.payload === 201) {
+      toast.success(`${movie.title} added to favourites successfully`, {
+        position: "top-right",
+        autoClose: 4000,
+        theme: "dark",
       });
+      dispatch(addFavouriteMovie(movie));
     } else {
-      console.log(response);
+      console.log(response.payload);
     }
   };
 
-  const removeFromFav = async () => {
-    const response = await removeMovieFromFavourites(movie.id);
-
-    if (response === 200) {
-      toast.success(`${movie.title} removed from favourites!`, {
-        position: toast.POSITION.TOP_RIGHT,
-        autoClose: 3000,
+  const removeFromFav = async (
+    e: React.MouseEvent<HTMLButtonElement, MouseEvent>
+  ) => {
+    e.stopPropagation();
+    const response = await dispatch(deleteFavouriteMovie(movie.id));
+    if (response.payload == 200) {
+      toast.error(`${movie.title} removed from favourites`, {
+        position: "top-right",
+        autoClose: 4000,
+        theme: "dark",
       });
-      /*Function prop received from parent component
-			helps to re-render the page.*/
-      fetchMovies();
+      dispatch(removeFavouriteMovie(movie.id));
+    } else {
+      console.log(response.payload);
     }
   };
 
   const imageClick = () => {
-    let url = `/${movie.title}`;
-    navigate(url, { state: { tab: tabName, id: movie.id } });
+    navigate(`/movie/${movie.id}`, {
+      state: { posterError: posterError, id: movie.id },
+    });
+  };
+
+  const handleImageError = () => {
+    setPosterError(true);
   };
 
   return (
-    <div className="movie-card" key={movie.id}>
-      <img
-        src={movie.posterurl}
-        alt={movie.title}
-        className="movie-card__image"
-        onClick={imageClick}
-      />
-      <div className="movie-card__details">
-        <h2 className="movie-card__title">{movie.title}</h2>
-        {tabName == "favourite" ? (
-          <>
-            <button className="movie-card__favourite" onClick={removeFromFav}>
-              Remove from Favourites <ImCross />
-            </button>
-          </>
+    <Fragment>
+      <Card className="cards" onClick={imageClick}>
+        {posterError ? (
+          <Lazy
+            className="cards__img"
+            src={noPosterImage}
+            scrollPosition={scrollPosition}
+          />
         ) : (
-          <>
-            <button className="movie-card__favourite" onClick={addToFav}>
-              Add to Favourites <ImHeart />
-            </button>
-          </>
+          <Lazy
+            className="cards__img"
+            src={movie.posterurl}
+            scrollPosition={scrollPosition}
+            handleImageError={handleImageError}
+          />
         )}
-      </div>
-    </div>
+        <Card.ImgOverlay
+          className={`cards__overlay ${
+            posterError ? "cards__overlay--visible" : ""
+          }`}
+        >
+          {activeTab === "favourite" ? (
+            <>
+              <button className="card__fav" onClick={removeFromFav}>
+                <FaHeart />
+              </button>
+            </>
+          ) : (
+            <>
+              <button className="card__fav" onClick={addToFav}>
+                {movieAlreadyFav ? <FaHeart /> : <FaRegHeart />}
+              </button>
+            </>
+          )}
+          <Card.Title className="card__title">{movie.title}</Card.Title>
+          <Card.Text className="card__detail">
+            {movie.releaseDate}
+            <span className="card__rating">
+              {movie.imdbRating}
+              <RiStarSFill />
+            </span>
+          </Card.Text>
+          <Card.Text className="card__description">
+            {`${movie.storyline.slice(0, 113)}...`}
+          </Card.Text>
+        </Card.ImgOverlay>
+      </Card>
+    </Fragment>
   );
 };
-
 export default MovieCard;

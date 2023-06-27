@@ -1,108 +1,106 @@
-import { Fragment, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
-import IMovieList from "../model/IMovieList";
-import { fetchMovie } from "../services/FetchData";
-import "../styles/MovieDetails.css";
+import { useSelector } from "react-redux";
+import { Container, Row, Col, Card, Badge } from "react-bootstrap";
+import { movieSelector } from "../store/selectors";
+import { MoviesComingElement } from "../model/IMovieList";
+import "../styles/MovieDetails.scss";
 
 function MovieDetails() {
   const location = useLocation();
-  const tabName = location.state?.tab;
-  const movieId = location.state?.id;
 
-  const [movieData, setMovieData] = useState<IMovieList[]>([]);
+  const [movieData, setMovieData] = useState<MoviesComingElement | undefined>();
+  const getMovieById = useSelector(movieSelector);
 
-  const fetchMovieDetails = async () => {
-    try {
-      const movie = await fetchMovie(tabName, movieId);
-      const formattedMovie = formatDurationAndRatings(movie);
-      setMovieData(formattedMovie);
-    } catch (error) {
-      console.error(error as Error);
-    }
-  };
-
-  const formatDurationAndRatings = (movies: IMovieList[]) => {
-    return movies.map((movie) => {
-      const timeInMin = parseInt(
-        movie.duration.substring(2, movie.duration.length - 1)
-      );
-      const hours = Math.floor(timeInMin / 60);
-      const minutes = timeInMin % 60;
-      const formattedTime = `${hours}h ${minutes}m`;
-
-      const sum = movie.ratings.reduce((total, rating) => total + rating, 0);
-      const avgRating = sum / movie.ratings.length;
-      const roundedAvgRating = Math.round(avgRating);
-
-      return {
-        ...movie,
-        duration: formattedTime,
-        averageRating: roundedAvgRating,
-      };
-    });
-  };
+  const id: string = location.state?.id;
+  const posterError: boolean = location.state?.posterError;
+  const noPosterImage = require("../assets/no-poster.png");
 
   useEffect(() => {
-    fetchMovieDetails();
+    const movie = getMovieById(id);
+    setMovieData(movie);
   }, []);
 
+  const formatTime = (duration: string) => {
+    const timeInMin = parseInt(duration.substring(2, duration.length - 1));
+    const hours = Math.floor(timeInMin / 60);
+    const minutes = timeInMin % 60;
+    return `${hours}h ${minutes}m`;
+  };
+
   return (
-    <>
-      {movieData.map((movie) => {
-        return (
-          <Fragment>
-            <div className="movie-details-container" key={movie.id}>
-              <div className="movie-details-image">
-                <img src={movie.posterurl} alt={movie.title} />
-              </div>
-              <div className="movie-details-details">
-                <h2>{`${movie.title} (${movie.releaseDate?.slice(0, 4)})`}</h2>
-                <div className="movie-details-rating">
-                  <div className="movie-details-label">IMDb Rating:</div>
-                  <div className="movie-details-value">{movie.imdbRating}</div>
-                </div>
-                <div className="movie-details-rating">
-                  <div className="movie-details-label">Content Rating:</div>
-                  <div className="movie-details-value">
-                    <strong>{movie.contentRating}</strong>
+    <div className="main-wrapper">
+      <Container key={movieData?.id}>
+        <div className="go-back">
+          <a href="/">Go Home</a>
+        </div>
+        {movieData && (
+          <Row className="movie-details">
+            <Col xs={12} md={3}>
+              <Card className="movie-poster">
+                <Card.Img
+                  variant="top"
+                  src={posterError ? noPosterImage : movieData.posterurl}
+                />
+              </Card>
+            </Col>
+            <Col xs={12} md={8}>
+              <Card className="movie-info">
+                <Card.Body>
+                  <Card.Title>
+                    {`${movieData.title} (${movieData.year})`}
+                  </Card.Title>
+                  <div className="genres">
+                    {movieData.genres.map((genre) => (
+                      <Badge bg="secondary" className="genre-badge">
+                        {genre}
+                      </Badge>
+                    ))}
                   </div>
-                </div>
-                <div className="movie-details-rating">
-                  <div className="movie-details-label">Average Rating:</div>
-                  <div className="movie-details-value">
-                    {movie.averageRating}
+                  <Card.Text>{movieData.storyline}</Card.Text>
+                  <div className="details">
+                    <div className="infoItem">
+                      <strong className="text bold">Content Rating:</strong>
+                      <span className="text">
+                        &nbsp;{movieData.contentRating}
+                      </span>
+                    </div>
+
+                    <div className="infoItem">
+                      <strong className="text bold">Release Date:</strong>
+                      <span className="text">
+                        &nbsp;
+                        {new Date(movieData.releaseDate).toLocaleDateString(
+                          "en-US",
+                          {
+                            day: "numeric",
+                            month: "long",
+                            year: "numeric",
+                          }
+                        )}
+                      </span>
+                    </div>
+
+                    <div className="infoItem">
+                      <strong className="text bold">Runtime:</strong>
+                      <span className="text">
+                        &nbsp;{formatTime(movieData.duration)}
+                      </span>
+                    </div>
                   </div>
-                </div>
-                <div className="movie-details-rating">
-                  <div className="movie-details-label">Duration:</div>
-                  <div className="movie-details-value">{movie.duration}</div>
-                </div>
-                <div className="movie-details-rating">
-                  <div className="movie-details-label">Genres:</div>
-                  <div className="movie-details-value">
-                    {movie.genres?.join()}
+
+                  <div className="actors">
+                    <strong>Actors :</strong>
+                    <span>&nbsp;{movieData.actors?.join(", ")}</span>
                   </div>
-                </div>
-                <div className="movie-details-rating">
-                  <div className="movie-details-label">Actors:</div>
-                  <div className="movie-details-value">
-                    {movie.actors?.join()}
-                  </div>
-                </div>
-                <div className="movie-details-rating">
-                  <div className="movie-details-label">Release Date:</div>
-                  <div className="movie-details-value">{movie.releaseDate}</div>
-                </div>
-                <div className="movie-details-rating">
-                  <div className="movie-details-label">Storyline:</div>
-                  <div className="movie-details-value">{movie.storyline}</div>
-                </div>
-              </div>
-            </div>
-          </Fragment>
-        );
-      })}
-    </>
+                </Card.Body>
+              </Card>
+            </Col>
+          </Row>
+        )}
+      </Container>
+    </div>
   );
 }
+
 export default MovieDetails;
