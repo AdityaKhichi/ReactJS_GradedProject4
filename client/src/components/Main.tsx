@@ -1,48 +1,36 @@
-import { useEffect, useState } from "react";
-import { useLocation } from "react-router-dom";
-import IMovieList from "../model/IMovieList";
-import { fetchMovie } from "../services/FetchData";
+import { useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { AppDispatch } from "../store/store";
+import { filteredMoviesSelector } from "../store/selectors";
+import { fetchMoviesData } from "../store/serviceSlice";
+import { Container } from "react-bootstrap";
+import {
+  trackWindowScroll,
+  ScrollPosition,
+} from "react-lazy-load-image-component";
 import MovieCard from "./MovieCard";
-import "../styles/Main.css";
+import "../styles/Main.scss";
 
-type Props = {
-  searchValue: string;
-};
-
-export default function Main({ searchValue }: Props) {
-  const [moviesData, setMoviesData] = useState<IMovieList[]>([]);
-  const [filteredMovies, setFilteredMovies] = useState<IMovieList[]>([]);
-  const location = useLocation();
-
-  let tabName: string = location.state?.tab || "movies-in-theaters";
-
-  const fetchMovies = async () => {
-    try {
-      const movies = await fetchMovie(tabName);
-      setMoviesData(movies);
-    } catch (error) {
-      console.error(error as Error);
-    }
-  };
+export function Main({ scrollPosition }: { scrollPosition: ScrollPosition }) {
+  const dispatch = useDispatch<AppDispatch>();
+  const filteredMovies = useSelector(filteredMoviesSelector);
 
   useEffect(() => {
-    fetchMovies();
-  }, [tabName]);
-
-  useEffect(() => {
-    const filteredData = searchValue
-      ? moviesData.filter((movie) =>
-          movie.title.toLowerCase().includes(searchValue)
-        )
-      : moviesData;
-    setFilteredMovies(filteredData);
-  }, [moviesData, searchValue]);
+    dispatch(fetchMoviesData());
+  }, []);
 
   return (
-    <>
-      {filteredMovies.map((movie) => (
-        <MovieCard movie={movie} tabName={tabName} fetchMovies={fetchMovies} />
-      ))}
-    </>
+    <div className="main-wrapper">
+      <Container>
+        {filteredMovies?.map((movie) => (
+          <MovieCard
+            key={movie.id}
+            movie={movie}
+            scrollPosition={scrollPosition}
+          />
+        ))}
+      </Container>
+    </div>
   );
 }
+export default trackWindowScroll(Main);
